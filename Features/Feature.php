@@ -15,6 +15,13 @@ use SHPF\SHPF;
 
 use \Exception;
 
+/**
+ * Abstract base class for a feature.
+ * Provides basic structure for running checkers.
+ * 
+ * @author Thomas Unger
+ *
+ */
 abstract class Feature
 {
 	/*-------------------------------------------------------------------------*/
@@ -48,6 +55,10 @@ abstract class Feature
 	 */
 	protected $securityLevel = 0;
 	
+	/**
+	 * Internal name
+	 * @var string
+	 */
 	protected $name;
 	
 	
@@ -73,12 +84,20 @@ abstract class Feature
 		return $this->runCheckers();
 	}
 	
-	
+	/**
+	 * Gets the internal name
+	 * @return string
+	 */
 	public function getName ()
 	{
 		return $this->name;
 	}
 	
+	/**
+	 * Returns the checker matching the internal name
+	 * @param string $name Internal name
+	 * @return Checker
+	 */
 	public function getCheckerByName ($name)
 	{
 		foreach ($this->checkers as $checker)
@@ -100,6 +119,10 @@ abstract class Feature
 			$this->securityLevel = $level;
 	}
 	
+	/**
+	 * Returns the security level of the feature
+	 * @return number
+	 */
 	public function getSecurityLevel ()
 	{
 		return $this->securityLevel;
@@ -110,6 +133,12 @@ abstract class Feature
 	// Protected
 	/*-------------------------------------------------------------------------*/
 	
+	/**
+	 * Runs a certain checker
+	 * @param Checker $checker The checker to run
+	 * @throws CheckFailedException
+	 * @return boolean
+	 */
 	protected function runChecker (Checker $checker)
 	{
 		Logger::writeLine ('Running checker '. get_class ($checker));
@@ -121,18 +150,20 @@ abstract class Feature
 		}
 		catch (Exception $ex)
 		{
-			//return new CheckFailedInfo ($checker, $this, $ex->getMessage());
 			throw new CheckFailedException( new CheckFailedInfo ($checker, $this, $ex->getMessage()) );
 		}
 		
 		// Check if failed
 		if (!$success)
 			throw new CheckFailedException( new CheckFailedInfo ($checker, $this) );
-			//return new CheckFailedInfo ($checker, $this);
 		
 		return true;
 	}
 	
+	/**
+	 * Runs all checkers of the feature
+	 * @return boolean
+	 */
 	protected function runCheckers ()
 	{
 		foreach ($this->checkers as $checker)
@@ -147,6 +178,10 @@ abstract class Feature
 		return true;
 	}
 	
+	/**
+	 * Adds a checker which will be run by the feature
+	 * @param Checker $checker The checker to add
+	 */
 	protected function addChecker (Checker $checker)
 	{
 		$this->checkers[] = $checker;

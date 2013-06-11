@@ -31,8 +31,6 @@ function hash_to_sorted_query_string(hash) {
 LockSession.receiveToken = function(token) {
     LockSession.TOKEN = token;
 
-    
-
     LockSession.saveToken (token);
     
     LockSession.cleanup();
@@ -108,6 +106,7 @@ LockSession.load_token = function () {
 
     // for now don't change the URL
     //document.location.replace(new_href);
+    
     return true;
 };
 
@@ -268,8 +267,7 @@ LockSession.patch_ajax = function() {
 			var parsed_current = parseUri(document.location);
 			
 			var url2 = parsed_current.directory + url;
-			
-			
+
 			parsed_url = parseUri(url2);
 			
 		}*/

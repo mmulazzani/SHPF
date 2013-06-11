@@ -15,7 +15,12 @@ use SHPF\Checkers\AsynchronousChecker;
 use \Exception;
 
 
-
+/**
+ * Creates and checks a CSS fingerprint of the client browser.
+ * 
+ * @author Thomas Unger
+ *
+ */
 class CSSFingerprintChecker extends AsynchronousChecker
 {
 	const TIMEOUT = 30;
@@ -256,42 +261,7 @@ class CSSFingerprintChecker extends AsynchronousChecker
 				throw new Exception ('Timeout. No response from async callback.');
 				
 		}
-		
-	/*	
-		//-----------------------------------------
-		// HTML Output
-		//-----------------------------------------
-		
-		$html = <<<END
-		
-	<div id="cssFingerprint" style="display:none; border-radius: 3px;"></div>	
-		
-END;
-		
-		
-		$this->output->outputHTML ($html);
-		
-		
-		//-----------------------------------------
-		// Javascript Output
-		//-----------------------------------------
-		
-		$js = <<<END
-		
-window.addEvent('domready', function()
-{
-    
-	CSSFingerprint.run ('{$this->getAsyncQueryString()}');
 	
-});
-
-END;
-		
-		$this->output->addJSFile ('Features/CSSFingerprint/js/cssfingerprint.js');
-		
-		$this->output->outputJS ($js);
-		*/
-		
 		//-----------------------------------------
 		// Get properties to check
 		//-----------------------------------------
@@ -387,25 +357,6 @@ END;
 		// Compare
 		//-----------------------------------------
 		
-		/*
-		$lastData = $this->userStore->getValue ('cssFingerprint_data');		
-		$curData = $this->postData;
-		
-		// Valid format? If not, what happened? Could not decrypt?
-		if (!is_array ($this->postData))
-			throw new Exception ('Invalid post data');
-		
-		
-		// Element count
-		if (count ($lastData) != count ($curData))
-			throw new Exception ('Property count not equal');
-		
-		// Properties
-		foreach ($lastData as $key => $elem)
-		{
-			if ($curData[ $key ] != $elem)
-				throw new Exception ('Property mismatch: '. $key);
-		}*/
 		
 		// Get the reference data whichs contains all properties
 		$referenceData = $this->userStore->getValue ('cssFingerprint_data');

@@ -9,8 +9,12 @@ use SHPF\SHPF;
 use SHPF\Features\Feature;
 
 
-
-
+/**
+ * Feature for creating and comparing a CSS fingerprint of the client browser.
+ * 
+ * @author Thomas Unger
+ *
+ */
 class CSSFingerprintFeature extends Feature
 {
 	/**

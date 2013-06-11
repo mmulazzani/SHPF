@@ -19,32 +19,60 @@ use \ReflectionFunction;
 use \ReflectionException;
 use \Exception;
 
+/**
+ * The main class of the framework.
+ * 
+ * @author Thomas Unger
+ *
+ */
 class SHPF
 {
 	/*-------------------------------------------------------------------------*/
 	// Public members
 	/*-------------------------------------------------------------------------*/
 	
+	/**
+	 * Defines whether the frameworks throws an exception when a check fails (default false)
+	 * @var boolean
+	 */
 	public $raiseExceptionOnFailure = false;
 	
+	/**
+	 * Defines whether asynchronous requests are allowed (default true)
+	 * @var boolean
+	 */
 	public $enableAsync = true;
 	
+	/**
+	 * Defines whether logging is enabled. If yes, log messages are appended in a separate file (default false)
+	 * @var boolean
+	 */
 	public $enableLogging = false;
 	
 	/*-------------------------------------------------------------------------*/
 	// Private members
 	/*-------------------------------------------------------------------------*/
 	
+	/**
+	 * Function pointer to the function which is executed when a checker fails
+	 * @var function pointer
+	 */
 	private $checkFailedHandler = null;
 	
+	/**
+	 * Private collection of enabled features
+	 * @var array
+	 */
 	private $features = array ();
 	
 	/**
+	 * Output class which manages all output
 	 * @var Output
 	 */
 	private $output;
 	
 	/**
+	 * Object to store user data
 	 * @var IUserStore
 	 */
 	private $userStore;
@@ -59,7 +87,7 @@ class SHPF
 	private $enforceSuccess = false;
 	
 	/**
-	 * 
+	 * Active crypto provider
 	 * @var ICryptoProvider
 	 */
 	private $cryptoProvider = null;
@@ -79,6 +107,12 @@ class SHPF
 		$this->userStore = new SessionStore();
 	}
 	
+	/**
+	 * Adds a feature to the list whose checkers will be run when the SHPF run method is called {@link SHPF::run}. 
+	 * The order of the features is the same as the order in which they were added.
+	 * 
+	 * @param Feature $feature The feature to add
+	 */
 	public function addFeature (Feature $feature)
 	{
 		Logger::writeLine ('Added feature: '. get_class ($feature));
@@ -86,9 +120,16 @@ class SHPF
 		$this->features[] = $feature;
 	}
 	
-	
+	/**
+	 * Runs all the added features.
+	 * The order of the features is the same as the order in which they were added.
+	 * 
+	 * @param integer $level If not null, runs only the features which have the same security level or lower 
+	 * @return boolean
+	 */
 	public function run ($level = null)
 	{
+		// Enable logging according to configuration
 		Logger::setEnabled($this->enableLogging);
 		
 		//-----------------------------------------
@@ -111,13 +152,6 @@ class SHPF
 				
 			}
 			
-			/*
-			if ($ret instanceof CheckFailedInfo)
-			{
-				$this->onFailed($ret);
-				return false;
-			}*/
-			
 			//-----------------------------------------
 			// Stop execution
 			// Only one checker at a time
@@ -130,6 +164,7 @@ class SHPF
 		// Run features
 		//-----------------------------------------
 		
+		// If security level is set, run only those with the same level or lower
 		if ($level !== null)
 			Logger::writeLine ('Running features with security level ' . $level .' or lower');
 		
@@ -144,12 +179,6 @@ class SHPF
 			try
 			{
 				$ret = $feature->run ();
-				//var_dump ($ret);
-				/*if ($ret instanceof CheckFailedInfo)
-				{
-					$this->onFailed($ret);
-					return false;
-				}*/
 			}
 			catch (CheckFailedException $ex)
 			{
@@ -162,10 +191,7 @@ class SHPF
 		//-----------------------------------------
 		// Output
 		//-----------------------------------------
-		
-		//$this->output->flushAll();
-		
-		
+
 		Logger::writeLine ('SHPF successful');
 		
 		
@@ -235,7 +261,12 @@ class SHPF
 		$this->enforceSuccess = $enforceSuccess;
 	}
 	
-	
+	/**
+	 * Sets a pointer to the function which is called when a checker fails.
+	 * 
+	 * @param string $functionName Name of the function
+	 * @return boolean True if the function is valid
+	 */
 	public function setCheckFailedHandler ($functionName)
 	{
 		try
@@ -253,7 +284,11 @@ class SHPF
 		}		
 	}
 	
-	
+	/**
+	 * Sets the active crypto provider
+	 * 
+	 * @param ICryptoProvider $cryptoProvider
+	 */
 	public function setCryptoProvider (ICryptoProvider $cryptoProvider)
 	{
 		$this->cryptoProvider = $cryptoProvider;
@@ -263,6 +298,12 @@ class SHPF
 	// Private methods
 	/*-------------------------------------------------------------------------*/
 	
+	/**
+	 * Runs the requested asynchronous checker
+	 * 
+	 * @throws CheckFailedException
+	 * @return boolean
+	 */
 	private function processAsyncCheckers ()
 	{
 		//-----------------------------------------
@@ -319,11 +360,12 @@ class SHPF
 			
 			$crypted = $_POST['encrypted'];
 			
+			// It is base64 encoded, so decode
 			$crypted = base64_decode ($crypted);
 
 			Logger::writeLine('Encrypted: '. print_r ($crypted, true));
 			
-			// Crypto Handler set?
+			// Crypto Handler set? Then try to decode
 			if ($this->cryptoProvider !== null)
 			{
 				try
@@ -341,11 +383,14 @@ class SHPF
 			//Logger::writeLine('Decrypted: '. print_r ($data, true));
 		}
 		
+		// All the data which we receive can be JSON encoded, so try to decode
 		$json = json_decode ($data, true);
+		
+		// If the result is valid, use that as new data value
 		if ($json !== null)
 			$data = $json;
 		
-		// Set data
+		// Set data to the feature
 		$checker->setPostData($data);
 		
 		//-----------------------------------------
@@ -371,6 +416,12 @@ class SHPF
 		return $success;
 	}
 	
+	/**
+	 * Is called when a checker fails
+	 * 
+	 * @param CheckFailedInfo $info
+	 * @throws CheckFailedException
+	 */
 	private function onFailed (CheckFailedInfo $info)
 	{
 		Logger::writeLine ('Failed: '. $info->toString());

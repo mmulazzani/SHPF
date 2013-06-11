@@ -14,7 +14,7 @@ class AutoLoader
 		if (file_exists ($filename))
 		{
 			include ($filename);
-			//echo 'Autloaded: ' . $filename ."<br>";
+			//echo 'Autoloaded: ' . $filename ."<br>";
 			return true;
 		}
 

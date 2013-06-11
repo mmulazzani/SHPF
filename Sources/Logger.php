@@ -3,18 +3,39 @@
 
 namespace SHPF;
 
-
+/**
+ * Logs messages to a file
+ * 
+ * @author Thomas Unger
+ *
+ */
 class Logger
 {
+	/**
+	 * Defines whether to start each log line with the current date and time (default true)
+	 * @var boolean
+	 */
 	public static $prependDateTime = true;
 	
+	/**
+	 * Defines whether logging is enabled
+	 * @var boolean
+	 */
 	private static $enabled = false;
 	
+	/**
+	 * Sets whether logging is enabled
+	 * @param boolean $enabled
+	 */
 	public static function setEnabled ($enabled)
 	{
 		self::$enabled = $enabled;
 	}
 	
+	/**
+	 * Writes a new line to the log
+	 * @param string $message The message to log
+	 */
 	public static function writeLine ($message)
 	{
 		if (!self::$enabled) return;
@@ -22,7 +43,10 @@ class Logger
 		self::write ($message ."\n");
 	}
 	
-	
+	/**
+	 * Writes text to the log
+	 * @param string $message The text to log
+	 */
 	public static function write ($message)
 	{
 		if (!self::$enabled) return;
@@ -32,14 +56,8 @@ class Logger
 		
 		try
 		{
-			/*if (!file_exists ('log.txt'))
-			{
-				$fp = fopen ('log.txt', 'a+');
-				fclose ($fp);
-			}*/
-			
 			$fp = fopen ('log.txt', 'a+');
-			//rewind ($fp);
+			
 			fputs ($fp, $message);
 			fclose ($fp);
 		}

@@ -14,7 +14,13 @@ use SHPF\Features\Feature;
 
 
 
-
+/**
+ * PHP Implementation and extension of the SessionLock protocol by Ben Adida
+ * @see https://github.com/benadida/sessionlock
+ * 
+ * @author Thomas Unger
+ *
+ */
 class SecureSessionFeature extends Feature implements ICryptoProvider
 {
 	/**
@@ -48,8 +54,16 @@ class SecureSessionFeature extends Feature implements ICryptoProvider
 	public $resetFailCountOnSuccess = true;
 	
 	
-	
+	/**
+	 * SecretChecker
+	 * @var SecureSessionSecretChecker
+	 */
 	private $secretChecker;
+	
+	/**
+	 * SecretNegotiation
+	 * @var SecureSessionSecretNegotiation
+	 */
 	private $secretNegotiation;
 	
 	/*-------------------------------------------------------------------------*/
@@ -77,36 +91,94 @@ class SecureSessionFeature extends Feature implements ICryptoProvider
 			$shpf->setCryptoProvider($this);
 	}
 	
+
+	/**
+	 * Sets the prime used in secret negotiation
+	 * 
+	 * @param string $prime Prime number in decimal format. Use string as parameter type.
+	 * @param integer $bits Length of the prime in bits
+	 */
+	public function setPrime ($prime, $bits)
+	{
+		$this->secretNegotiation->setPrime ($prime, $bits);
+	}
+	
+	/*-------------------------------------------------------------------------*/
+	// Private
+	/*-------------------------------------------------------------------------*/
+	
+	/**
+	 * Returns the negotiated shared key
+	 * @return string shared key
+	 */
+	private function getSharedKey ()
+	{
+		return $this->userStore->getValue ('secureSession_shared');
+	}
+	
+	/**
+	 * PHP PBKDF2 Implementation.
+	 *
+	 * For more information see: http://www.ietf.org/rfc/rfc2898.txt
+	 *
+	 * @param string $p             password
+	 * @param string $s             salt
+	 * @param integer $c            iteration count (use 1000 or higher)
+	 * @param integer $dkl  derived key length
+	 * @param string $algo  hash algorithm
+	 * @return string                       derived key of correct length
+	 */
+	private function PBKDF2($p, $s, $c, $dkl, $algo = 'sha1') {
+		$kb = ceil($dkl / strlen(hash($algo, null, true)));
+		$dk = '';
+		for($block = 1; $block <= $kb; ++$block) {
+			$ib = $b = hash_hmac($algo, $s.pack('N', $block), $p, true);
+			for($i = 1; $i < $c; ++$i)
+				$ib ^= ($b = hash_hmac($algo, $b, $p, true));
+			$dk.= $ib;
+		}
+		return substr($dk, 0, $dkl);
+	
+	}
+	
+
 	
 	/*-------------------------------------------------------------------------*/
 	// CryptoProvider
 	/*-------------------------------------------------------------------------*/
 	
 
+	/**
+	 * Checks if Mcrypt is available
+	 * @throws \Exception
+	 */
 	private function checkMcrypt ()
 	{
 		if (!function_exists ('mcrypt_module_open') || ! MCRYPT_RIJNDAEL_128)
 			throw new \Exception ('mcrypt required for encryption/decryption');
 	}
 	
-	private function getSharedKey ()
-	{
-		return $this->userStore->getValue ('secureSession_shared');
-	}
 	
+	/**
+	 * Returns the key used in encryption/decryption by the crypto provider
+	 * @return string
+	 */
 	private function getCryptoKey ()
 	{
 		$sharedKey = $this->getSharedKey();
 		return $sharedKey;
-		
-		//$cryptoKey = sha1($sharedKey);
-		
-		//return $cryptoKey;
 	}
 	
+	/**
+	 * Encrypts a message by using AES 128 bit CBC mode
+	 * @see \SHPF\ICryptoProvider::encrypt()
+	 */
 	public function encrypt ($message)
 	{
+		// We do not use it in this feature
 		throw new \Exception ('Not implemented');
+		
+		// NOTE: The following code is untested and not complete
 		
 		$this->checkMcrypt();
 		
@@ -129,31 +201,39 @@ class SecureSessionFeature extends Feature implements ICryptoProvider
 		return $encrypted_data;
 	}
 	
+	/**
+	 * Decrypts a message by using AES 128 bit CBC mode, key is the shared secret of this feature.
+	 * This also extracts and checks the included timestamp inside the message.
+	 * 
+	 * @see \SHPF\ICryptoProvider::decrypt()
+	 */
 	public function decrypt ($message)
 	{
+		// Check availability of needed PHP extension
 		$this->checkMcrypt();
 	
+		// Get key
 		$key = $this->getCryptoKey ();
 		if (!$key)
 			return $message;
 	
+		// Mcrypt, specify algorithm and mode
 		$td = mcrypt_module_open (MCRYPT_RIJNDAEL_128, '', MCRYPT_MODE_CBC, '');
-		//$this->cryptIV = mcrypt_create_iv (mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
-		
+
+		// Extract IV from message
 		$iv = substr($message, 0, 16); 
 		$message = substr ($message, 16);
 		
-		
-		//Logger::writeLine ('IV: '. $iv);
-		
+		// Prepare key
 		$key = $this->PBKDF2($key, $iv, 1, 32); 
 		
+		// Mcrypt magic
 		mcrypt_generic_init($td, $key, $iv);
 		$decrypted = mdecrypt_generic($td, $message);
 		mcrypt_generic_deinit($td);
 		mcrypt_module_close($td);
 		
-		
+		// Remove whitespace or unreadable characters from decrypted message
 		$decrypted = trim ($decrypted);
 		
 		
@@ -186,36 +266,6 @@ class SecureSessionFeature extends Feature implements ICryptoProvider
 		return $decrypted;
 	}
 	
-	/**
-	 * PHP PBKDF2 Implementation.
-	 *
-	 * For more information see: http://www.ietf.org/rfc/rfc2898.txt
-	 *
-	 * @param string $p             password
-	 * @param string $s             salt
-	 * @param integer $c            iteration count (use 1000 or higher)
-	 * @param integer $dkl  derived key length
-	 * @param string $algo  hash algorithm
-	 * @return string                       derived key of correct length
-	 */
-	private function PBKDF2($p, $s, $c, $dkl, $algo = 'sha1') {
-		$kb = ceil($dkl / strlen(hash($algo, null, true)));
-		$dk = '';
-		for($block = 1; $block <= $kb; ++$block) {
-			$ib = $b = hash_hmac($algo, $s.pack('N', $block), $p, true);
-			for($i = 1; $i < $c; ++$i)
-				$ib ^= ($b = hash_hmac($algo, $b, $p, true));
-			$dk.= $ib;
-		}
-		return substr($dk, 0, $dkl);
 	
-	}
-	
-	
-	
-	public function setPrime ($prime, $bits)
-	{
-		$this->secretNegotiation->setPrime ($prime, $bits);
-	}
 
 }

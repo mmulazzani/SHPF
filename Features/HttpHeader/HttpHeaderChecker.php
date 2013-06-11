@@ -11,7 +11,13 @@ use SHPF\Checkers\SynchronousChecker;
 use \Exception;
 
 
-
+/**
+ * Checker to collect and compare Http headers of the client request.
+ * Also allows IP binding by using request information.
+ * 
+ * @author Thomas Unger
+ *
+ */
 class HttpHeaderChecker extends SynchronousChecker
 {
 	public function __construct (SHPF $shpf, Feature $feature)

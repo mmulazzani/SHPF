@@ -7,6 +7,13 @@ use SHPF\Features\Feature;
 use SHPF\IUserStore;
 use SHPF\SHPF;
 
+/**
+ * Abstract base class for a checker.
+ * Provides basic structure for writing a checker.
+ * 
+ * @author Thomas Unger
+ *
+ */
 abstract class Checker
 {
 	/*-------------------------------------------------------------------------*/
@@ -34,7 +41,10 @@ abstract class Checker
 	 */
 	protected $feature;
 	
-	
+	/**
+	 * Internal name
+	 * @var string
+	 */
 	protected $name;
 	
 	
@@ -58,7 +68,10 @@ abstract class Checker
 	 */
 	abstract public function run ();
 	
-	
+	/**
+	 * Returns the internal name
+	 * @return string
+	 */
 	public function getName ()
 	{
 		return $this->name;

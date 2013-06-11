@@ -20,9 +20,12 @@ class SessionStore implements IUserStore
 		// Does a session exist?
 		if (strlen ( session_id () ) == 0)
 		{
-			/*ini_set("session.use_cookies",0);
+			/*
+			// The following can be used to transport the SID in the URL
+			ini_set("session.use_cookies",0);
 			ini_set("session.use_only_cookies",0);
-			ini_set("session.use_trans_sid",1);*/
+			ini_set("session.use_trans_sid",1);
+			*/
 			
 			// Try start a new session
 			$success = session_start ();

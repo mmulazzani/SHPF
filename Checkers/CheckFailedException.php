@@ -4,7 +4,12 @@ namespace SHPF\Checkers;
 
 use \Exception;
 
-
+/**
+ * Exception containing all info about a failed checker.
+ * 
+ * @author Thomas Unger
+ *
+ */
 class CheckFailedException extends Exception
 {
 	private $info;

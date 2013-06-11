@@ -1,15 +1,9 @@
 <?php
 /**
- * 
- * @author Thomas
- *
- */
-
-
-/**
  * Ported from Session Lock by Ben Adida
  * https://github.com/benadida/sessionlock/blob/master/python/sessionlock.py
  *
+ * @author Thomas Unger
  */
 
 namespace SHPF\Features\SecureSession;
@@ -25,7 +19,12 @@ use SHPF\Checkers\SynchronousChecker;
 use \Exception;
 
 
-
+/**
+ * Checker to validate Http Requests using shared secret
+ * 
+ * @author Thomas Unger
+ *
+ */
 class SecureSessionSecretChecker extends SynchronousChecker
 {
 	public function __construct (SHPF $shpf, Feature $feature)
@@ -60,12 +59,7 @@ class SecureSessionSecretChecker extends SynchronousChecker
 			$this->output->addJSFile ('Features/SecureSession/js/2.5.3-crypto-sha1-hmac-pbkdf2-blockmodes-aes.js');
 			$this->output->addJSFile ('Features/SecureSession/js/shpf.crypt.js');
 		}
-		
-		//$this->output->addJSFile ('Features/SecureSession/js/sha1.js');
-		
-		//echo $this->feature->getCryptoKey();
-		
-		//$this->output->flushJS ();
+
 		
 		$sessID = session_id ();
 		
@@ -169,12 +163,7 @@ END;
 		//-----------------------------------------
 		// Get URL to sign
 		//-----------------------------------------
-		
-		/*$url = $_SERVER['REQUEST_URI'];
-		$lsPos = strpos ($url, '&ls_sig');
-		$urlToSign = substr ($url, 0, $lsPos);*/
-		
-		//unset ($_REQUEST['ls_timestamp']);
+
 		unset ($_REQUEST['ls_sig']);
 		
 		// For some strange reason, there's a wrong session id in _REQUEST
@@ -204,7 +193,6 @@ END;
 		$urlToSign = $url . $params;
 		
 		
-		//echo $urlToSign."<br>";
 		
 		
 		//-----------------------------------------
@@ -215,12 +203,7 @@ END;
 			$hmac = hash_hmac ('sha1', $urlToSign, $sharedSecret);
 		else
 			$hmac = $this->hmac_sha1 ($sharedSecret, $urlToSign);
-		
-		
-		/*echo 'URL: '. $urlToSign.'<br/>';
-		echo 'Shared: '. $sharedSecret.'<br/>';
-		echo 'HMAC: '. $hmac;
-		*/
+
 		
 		//-----------------------------------------
 		// Compare HMAC
@@ -236,7 +219,10 @@ END;
 		return true;
 	}
 	
-	
+	/**
+	 * Counts failed requests and returns if another failed request is allowed
+	 * @return boolean
+	 */
 	private function softFail ()
 	{
 		$count = $this->userStore->getValue ('secureSession_missingGETcount');
@@ -255,7 +241,12 @@ END;
 	}
 	
 	
-	
+	/**
+	 * Generates HMAC using SHA1
+	 * @param string $key
+	 * @param string $data
+	 * @return string
+	 */
 	private function hmac_sha1($key, $data)
 	{
 	    // Adjust key to exactly 64 bytes

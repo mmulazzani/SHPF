@@ -8,20 +8,15 @@ var SHPFClass = new Class ({
 
 	sendAsync: function (url, postPayload, encryptIfPossible)
 	{
-		//if (LockSession)
-		//	url = LockSession.patch
-		
 		if (!encryptIfPossible)
 			encryptIfPossible = true;
-		
-		
+			
 		var shpf = this;
 		
 		var request = new Request ({ 
 			url: url,
 			onSuccess: function(responseText)
 			{
-				//alert (responseText);
 				if (responseText != 1)
 				{
 					shpf.fireEvent ('failed', responseText ? responseText : '');
@@ -40,8 +35,6 @@ var SHPFClass = new Class ({
 		}
 		else
 			message = { data: JSON.encode (message) };
-		
-		//alert (Object.toQueryString (message));
 		
 		request.post (message);
 	}
